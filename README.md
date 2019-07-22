@@ -1,4 +1,4 @@
-# SignPoshScripts
+# SignPoshScript
 WPF GUI written im PowerShell to sign your scripts.
 
 <b>Prerequisites</b>
