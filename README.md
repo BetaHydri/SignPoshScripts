@@ -16,4 +16,8 @@ The  EnhancedKeyUsageList (EKU) must be ${\color{red}Code Signing (1.3.6.1.5.5.7
 ### WPF GUI
 ![alt text](https://github.com/BetaHydri/SignPoshScripts/blob/SIGNPOWERSHELL/WPF-GUI.png)
 
+### Code signed .ps1
+![alt text](https://github.com/BetaHydri/SignPoshScripts/blob/SIGNPOWERSHELL/Sign.png)
 
+### Properties of .ps1 Certificate Tab
+![alt text](https://github.com/BetaHydri/SignPoshScripts/blob/SIGNPOWERSHELL/CodeSigningCert.png)
