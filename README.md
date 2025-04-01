@@ -12,3 +12,6 @@ The  EnhancedKeyUsageList (EKU) must be ${\color{red}Code Signing (1.3.6.1.5.5.7
 <li>CodeSigningTool.exe - precompiled executable of the PoSh Sign.ps1 script</li>
 <li>SignPS.ps1 - WFP / PowerShell source code</li>
 </ul>
+
+###WPF GUI
+![alt text](https://github.com/BetaHydri/SignPoshScripts/blob/SIGNPOWERSHELL/WPF-GUI.png)
