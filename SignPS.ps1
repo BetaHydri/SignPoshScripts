@@ -1,5 +1,4 @@
-﻿$XAML =@'
-
+﻿$XAML = @'
 
 <Window x:Name="MainWindows" 
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -62,14 +61,12 @@
     </Grid>
 </Window>
 
-
 '@
 
-function Convert-XAMLtoWindow
-{
+function Convert-XAMLtoWindow {
   param
   (
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory = $true)]
     [string]
     $XAML
   )
@@ -80,19 +77,17 @@ function Convert-XAMLtoWindow
   $result = [Windows.Markup.XAMLReader]::Load($reader)
   $reader.Close()
   $reader = [XML.XMLReader]::Create([IO.StringReader]$XAML)
-  while ($reader.Read())
-  {
-    $name=$reader.GetAttribute('Name')
-    if (!$name) {$name=$reader.GetAttribute('x:Name')}
-    if($name)
-    {$result | Add-Member NoteProperty -Name $name -Value $result.FindName($name) -Force}
+  while ($reader.Read()) {
+    $name = $reader.GetAttribute('Name')
+    if (!$name) { $name = $reader.GetAttribute('x:Name') }
+    if ($name)
+    { $result | Add-Member NoteProperty -Name $name -Value $result.FindName($name) -Force }
   }
   $reader.Close()
   $result
 }
 
-function Show-WPFWindow
-{
+function Show-WPFWindow {
   param
   (
     [Parameter(Mandatory)]
@@ -108,8 +103,7 @@ function Show-WPFWindow
   $result
 }
 
-function Get-Files
-{
+function Get-Files {
   if ($window.List1.SelectedIndex -ne -1) {
     $filenames = $window.List1.SelectedItems
     return $filenames
@@ -117,26 +111,57 @@ function Get-Files
   else { 
     Write-Verbose -Message ("Please select your files to sign")
     $window.Notification.Text = "You have to select at least one file to sign"
-  
   }
 }
 
-function Invoke-SignFile ([Parameter(Mandatory=$true)]$filename) {
+function Get-CodeSigningCertificatesFromSmartCard {
+  try {
+    # Load the smartcard reader
+    $store = New-Object System.Security.Cryptography.X509Certificates.X509Store "My", "CurrentUser"
+    $store.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly)
+
+    # Get all certificates from the smartcard
+    $certificates = $store.Certificates | Where-Object { 
+      $_.HasPrivateKey -and 
+      $_.PrivateKey.CspKeyContainerInfo.ProviderName -eq "Microsoft Smart Card Key Storage Provider" 
+    }
+
+    foreach ($cert in $certificates) {
+      # Check if the certificate has the code signing usage
+      foreach ($extension in $cert.Extensions) {
+        if ($extension -is [System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension]) {
+          $usages = $extension.EnhancedKeyUsages
+          foreach ($usage in $usages) {
+            if ($usage.FriendlyName -eq "Code Signing") {
+              Write-Output $cert
+            }
+          }
+        }
+      }
+    }
+
+    # Close the store
+    $store.Close()
+  }
+  catch {
+    Write-Error "An error occurred: $_"
+  }
+}
+function Invoke-SignFile ([Parameter(Mandatory = $true)]$filename) {
   try {
     $thumbprint = $script:mycodesigningcerts[($window.ComboBox1.SelectedIndex)].Thumbprint
     $mycert = Get-ChildItem("Cert:\CurrentUser\my\$thumbprint")
     Set-AuthenticodeSignature -FilePath $filename `
-    -Certificate $mycert `
-    -TimestampServer http://timestamp.digicert.com `
-    -IncludeChain All `
-    -HashAlgorithm SHA256
+      -Certificate $mycert `
+      -TimestampServer http://timestamp.digicert.com `
+      -IncludeChain All `
+      -HashAlgorithm SHA256
     Write-Verbose -Message ("File {0} signed" -f $filename)
     $window.Notification.Text += "File: {0} have been signed`n" -f $filename.Name
   }
-   catch { 
+  catch { 
     Write-Verbose -Message ("Error: {0}" -f $_.Exception.Message)
     $window.Notification.Text = "Error: {0}`n" -f $_.Exception.Message
-    
   } 
 }
 
@@ -159,17 +184,17 @@ $window.Browse.add_Click{
   Add-Type -AssemblyName System.Windows.Forms
   $FileBrowser = New-Object System.Windows.Forms.OpenFileDialog -Property @{
     Multiselect = $true # Multiple files can be chosen
-    Filter = 'PowerShell (PowerShell (*.ps*)|*.ps*;*.ps1xml|All Files (*.*)|*.*' # Specified file types
+    Filter      = 'PowerShell (PowerShell (*.ps*)|*.ps*;*.ps1xml|All Files (*.*)|*.*' # Specified file types
   }
 
   [void]$FileBrowser.ShowDialog()
 
   $path = $FileBrowser.FileNames
 
-  If($FileBrowser.FileNames -like "*\*") {
+  If ($FileBrowser.FileNames -like "*\*") {
 
     # Do something before work on individual files commences
-    foreach($file in Get-ChildItem $path){
+    foreach ($file in Get-ChildItem $path) {
       # add filepath to the ListBox List1
       Get-ChildItem ($file) |
       ForEach-Object {
@@ -179,12 +204,12 @@ $window.Browse.add_Click{
     # Get all my valid code signing certs in user my store and populate ComboBox
           
     $certs = @(Get-ChildItem cert:\currentuser\my -CodeSigningCert)
-    $certs|ForEach-Object {
-      If (([datetime]($_.NotAfter.ToString("MM/dd/yyyy HH:mm:ss")) -gt ([datetime](get-date -UFormat "%m/%d/%Y %R")))) {
+    $certs | ForEach-Object {
+      If (([datetime]($_.NotAfter.ToString("MM/dd/yyyy HH:mm:ss")) -gt ([datetime](Get-Date -UFormat "%m/%d/%Y %R")))) {
         $window.ComboBox1.Items.Add($_.Subject)
         $script:mycodesigningcerts += $_    
       }
-      elseif (([datetime]($_.NotAfter.ToString("MM/dd/yyyy HH:mm:ss")) -lt ([datetime](get-date -UFormat "%m/%d/%Y %R")))) { 
+      elseif (([datetime]($_.NotAfter.ToString("MM/dd/yyyy HH:mm:ss")) -lt ([datetime](Get-Date -UFormat "%m/%d/%Y %R")))) { 
         Write-Verbose -Message ("No valid codesigning certificate found:`n $_.Subject")
         $window.Notification.Text = "Certificate:`n{0}`nwith Thumbprint {1}`nis not valid and has been skipped" -f $_.Subject, $_.Thumbprint  
       }
@@ -209,7 +234,6 @@ $window.ComboBox1.add_SelectionChanged{
     $window.Sign.IsEnabled = $true
     $window.Message.Text = $script:mycodesigningcerts[($window.ComboBox1.SelectedIndex)]
   }
-  
 }
 
 $window.Sign.add_Click{
@@ -232,4 +256,4 @@ $window.Sign.add_Click{
 }
 
 Show-WPFWindow -Window $window
-
+#Get-codeSigningCertificatesFromSmartCard
