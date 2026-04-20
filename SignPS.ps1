@@ -1,4 +1,24 @@
-﻿$XAML = @'
+﻿<#
+.SYNOPSIS
+    WPF GUI tool to sign PowerShell scripts with a code-signing certificate.
+
+.DESCRIPTION
+    Presents a WPF window that lets the user browse for PowerShell files,
+    select a code-signing certificate from the Windows certificate store or
+    a connected smart card, and apply Authenticode signatures (SHA-256) with
+    a DigiCert timestamp.
+
+.AUTHOR
+    Jan Tiedemann
+
+.DATE
+    2026
+
+.LINK
+    https://github.com/BetaHydri/SignPoshScripts
+#>
+
+$XAML = @'
 
 <Window x:Name="MainWindows" 
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -176,10 +196,10 @@ $window.Close.add_Click{
 
 $window.Browse.add_Click{
 
-  # add event code here
   # Clear Forms in UI
   $window.List1.items.Clear()
   $window.ComboBox1.Items.Clear()
+  $script:mycodesigningcerts = @()
   
   Add-Type -AssemblyName System.Windows.Forms
   $FileBrowser = New-Object System.Windows.Forms.OpenFileDialog -Property @{
@@ -201,24 +221,35 @@ $window.Browse.add_Click{
         $window.List1.items.Add($file)
       }
     }
-    # Get all my valid code signing certs in user my store and populate ComboBox
-          
-    $certs = @(Get-ChildItem cert:\currentuser\my -CodeSigningCert)
-    $certs | ForEach-Object {
-      If (([datetime]($_.NotAfter.ToString("MM/dd/yyyy HH:mm:ss")) -gt ([datetime](Get-Date -UFormat "%m/%d/%Y %R")))) {
-        $window.ComboBox1.Items.Add($_.Subject)
-        $script:mycodesigningcerts += $_    
-      }
-      elseif (([datetime]($_.NotAfter.ToString("MM/dd/yyyy HH:mm:ss")) -lt ([datetime](Get-Date -UFormat "%m/%d/%Y %R")))) { 
-        Write-Verbose -Message ("No valid codesigning certificate found:`n $_.Subject")
-        $window.Notification.Text = "Certificate:`n{0}`nwith Thumbprint {1}`nis not valid and has been skipped" -f $_.Subject, $_.Thumbprint  
+    # Collect code signing certs from user store and smartcard, deduplicate by thumbprint
+    $storeCerts = @(Get-ChildItem cert:\currentuser\my -CodeSigningCert)
+    $smartCardCerts = @(Get-CodeSigningCertificatesFromSmartCard)
+    $seen = @{}
+    $allCerts = @($storeCerts) + @($smartCardCerts) | Where-Object {
+      $_ -and -not $seen.ContainsKey($_.Thumbprint)
+    } | ForEach-Object {
+      $seen[$_.Thumbprint] = $true
+      $_
+    }
+
+    $now = Get-Date
+    foreach ($cert in $allCerts) {
+      if ($cert.NotAfter -gt $now) {
+        $window.ComboBox1.Items.Add($cert.Subject)
+        $script:mycodesigningcerts += $cert
       }
       else {
-        Write-Verbose -Message ("No valid codesigning certificate found")
-        $window.Message.Text = "No certificates have been found that can be used!" 
+        Write-Verbose -Message ('Certificate expired: {0}' -f $cert.Subject)
+        $window.Notification.Text = "Certificate:`n{0}`nwith Thumbprint {1}`nis expired and has been skipped" -f $cert.Subject, $cert.Thumbprint
       }
     }
-    $window.ComboBox1.SelectedIndex = 0
+
+    if ($script:mycodesigningcerts.Count -eq 0) {
+      $window.Message.Text = 'No valid code signing certificates have been found!'
+    }
+    else {
+      $window.ComboBox1.SelectedIndex = 0
+    }
    
   }
 
@@ -256,4 +287,3 @@ $window.Sign.add_Click{
 }
 
 Show-WPFWindow -Window $window
-#Get-codeSigningCertificatesFromSmartCard

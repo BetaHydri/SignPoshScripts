@@ -1,0 +1,10 @@
+# Visual Studio
+.vs/
+
+# VS Code (keep launch.json tracked)
+# .vscode/
+
+# Temp / OS files
+*.tmp
+Thumbs.db
+Desktop.ini

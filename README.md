@@ -1,24 +1,55 @@
-# SignPoshScript
+# SignPoshScripts
 
 [![PowerShell](https://img.shields.io/badge/Language-PowerShell-blue?logo=powershell&logoColor=white)](https://github.com/BetaHydri/SignPoshScripts)
 [![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows&logoColor=white)](https://github.com/BetaHydri/SignPoshScripts)
 [![GitHub stars](https://img.shields.io/github/stars/BetaHydri/SignPoshScripts?style=flat&logo=github)](https://github.com/BetaHydri/SignPoshScripts/stargazers)
 [![GitHub issues](https://img.shields.io/github/issues/BetaHydri/SignPoshScripts?logo=github)](https://github.com/BetaHydri/SignPoshScripts/issues)
 [![GitHub last commit](https://img.shields.io/github/last-commit/BetaHydri/SignPoshScripts/SIGNPOWERSHELL?logo=github)](https://github.com/BetaHydri/SignPoshScripts/commits/SIGNPOWERSHELL)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-WPF GUI written in PowerShell to sign your scripts.
+> **Note:** This repository was formerly named `SignPowershell`.
+> Old URLs redirect here automatically.
 
-<b>Prerequisites</b>
+WPF GUI written in PowerShell to sign your scripts with code-signing
+certificates from the Windows certificate store **or** a smart card.
 
-You need to import at least one CodeSigning Certificate into your users certificate store at: <b>Cert:\CurrentUser\My\\</b>
+## Features
 
-The  EnhancedKeyUsageList (EKU) must be ${\color{red}Code Signing (1.3.6.1.5.5.7.3.3)}$
+- Browse and select multiple PowerShell files (`.ps1`, `.psm1`, `.psd1`, `.ps1xml`)
+- Discovers code-signing certificates from **both**:
+  - `Cert:\CurrentUser\My` (software-based certificates)
+  - Smart card readers (Microsoft Smart Card Key Storage Provider)
+- Deduplicates certificates and filters out expired ones
+- Signs with SHA-256 and timestamps via DigiCert
+- Includes the full certificate chain in the signature
 
-<b>Files</b>
-<ul>
-<li>CodeSigningTool.exe - precompiled executable of the PoSh Sign.ps1 script</li>
-<li>SignPS.ps1 - WFP / PowerShell source code</li>
-</ul>
+## Prerequisites
+
+You need at least one valid code-signing certificate in your user
+certificate store (`Cert:\CurrentUser\My`) **or** on a connected
+smart card.
+
+The certificate's Enhanced Key Usage (EKU) must include:
+$\color{red}{\text{Code Signing (1.3.6.1.5.5.7.3.3)}}$
+
+## Files
+
+| File / Folder | Description |
+|---|---|
+| `SignPS.ps1` | WPF / PowerShell source code |
+| `CodeSigningTool.exe` | Standalone executable (compiled from `SignPS.ps1` with [ps2exe](https://github.com/MScholtes/ps2exe)) |
+| `images/` | Screenshots used in this README |
+| `.vscode/launch.json` | VS Code debug configuration |
+| `LICENSE` | MIT license |
+
+## Building the Executable
+
+To recompile the `.exe` after modifying the script:
+
+```powershell
+Install-Module -Name ps2exe -Scope CurrentUser -Force
+Invoke-PS2EXE -InputFile .\SignPS.ps1 -OutputFile .\CodeSigningTool.exe -NoConsole
+```
 
 ---
 
@@ -158,11 +189,20 @@ Get-AuthenticodeSignature -FilePath \\Server\Share\YourScript.ps1 |
 
 ---
 
+## Screenshots
+
 ### WPF GUI
-![alt text](https://github.com/BetaHydri/SignPoshScripts/blob/SIGNPOWERSHELL/WPF-GUI.png)
+
+![WPF GUI](images/WPF-GUI.png)
 
 ### Code signed .ps1
-![alt text](https://github.com/BetaHydri/SignPoshScripts/blob/SIGNPOWERSHELL/Sign.png)
+
+![Signed script](images/Sign.png)
 
 ### Properties of .ps1 Certificate Tab
-![alt text](https://github.com/BetaHydri/SignPoshScripts/blob/SIGNPOWERSHELL/CodeSigningCert.png)
+
+![Certificate properties](images/CodeSigningCert.png)
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
