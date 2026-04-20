@@ -189,17 +189,44 @@ Get-AuthenticodeSignature -FilePath \\Server\Share\YourScript.ps1 |
 
 ---
 
+## How to Use
+
+### Step 1 — Browse for files
+
+Click **Browse...** to open a file picker. Select one or more PowerShell
+files (`.ps1`, `.psm1`, `.psd1`, `.ps1xml`). The selected files appear in
+the list on the left. The tool automatically discovers all valid
+code-signing certificates from your certificate store and any connected
+smart card, and populates the **Choose Code Signing Certificate** dropdown.
+
+### Step 2 — Select a certificate
+
+Pick the certificate you want to sign with from the dropdown. The
+**Certificate Info** area on the right shows the full details (subject,
+issuer, thumbprint, validity) of the selected certificate.
+
+### Step 3 — Sign
+
+Select one or more files in the list, then click **Sign**. Each file is
+signed with SHA-256, timestamped via DigiCert, and the full certificate
+chain is included. The **Notifications** area confirms which files were
+signed successfully or reports any errors.
+
+### Step 4 — Close
+
+Click **Close** (or press `Esc`) to exit the tool.
+
 ## Screenshots
 
-### WPF GUI
+### WPF GUI — after browsing for files and selecting a certificate
 
 ![WPF GUI](images/WPF-GUI.png)
 
-### Code signed .ps1
+### Signed script — the Authenticode signature block appended to the file
 
 ![Signed script](images/Sign.png)
 
-### Properties of .ps1 Certificate Tab
+### File properties — Digital Signatures / Certificate tab confirms the signature
 
 ![Certificate properties](images/CodeSigningCert.png)
 
