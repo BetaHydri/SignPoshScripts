@@ -1,5 +1,12 @@
 # SignPoshScript
-WPF GUI written im PowerShell to sign your scripts.
+
+[![PowerShell](https://img.shields.io/badge/Language-PowerShell-blue?logo=powershell&logoColor=white)](https://github.com/BetaHydri/SignPoshScripts)
+[![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows&logoColor=white)](https://github.com/BetaHydri/SignPoshScripts)
+[![GitHub stars](https://img.shields.io/github/stars/BetaHydri/SignPoshScripts?style=flat&logo=github)](https://github.com/BetaHydri/SignPoshScripts/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/BetaHydri/SignPoshScripts?logo=github)](https://github.com/BetaHydri/SignPoshScripts/issues)
+[![GitHub last commit](https://img.shields.io/github/last-commit/BetaHydri/SignPoshScripts/SIGNPOWERSHELL?logo=github)](https://github.com/BetaHydri/SignPoshScripts/commits/SIGNPOWERSHELL)
+
+WPF GUI written in PowerShell to sign your scripts.
 
 <b>Prerequisites</b>
 
