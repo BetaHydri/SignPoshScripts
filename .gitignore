@@ -8,3 +8,6 @@
 *.tmp
 Thumbs.db
 Desktop.ini
+
+# Memory Bank (local project knowledge, not tracked)
+.memory-bank/
