@@ -239,6 +239,12 @@ Pick the certificate you want to sign with from the dropdown. The
 **Certificate Info** area on the right shows the full details (subject,
 issuer, thumbprint, validity) of the selected certificate.
 
+If you have multiple code-signing certificates — for example one
+software-based and one on a smart card — each appears as a separate
+entry in the dropdown. Simply select the one you want. When signing
+with a smart card certificate, Windows will prompt you for the
+smart card PIN.
+
 ### Step 3 — Sign
 
 Select one or more files in the list, then click **Sign**. Each file is
