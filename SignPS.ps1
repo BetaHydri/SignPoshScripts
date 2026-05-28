@@ -27,7 +27,7 @@ $XAML = @'
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WpfApp1"
         mc:Ignorable="d"
-        Title="Certificate Code Signing Tool" Height="490" Width="894" ResizeMode="NoResize">
+        Title="Certificate Code Signing Tool" Height="540" Width="894" ResizeMode="NoResize">
     <Grid x:Name="MainWindow1" Margin="0,0,-20.333,-19">
         <Grid.RowDefinitions>
             <RowDefinition Height="82*"/>
@@ -77,6 +77,9 @@ $XAML = @'
         <GroupBox x:Name="NotificationGroupBox" Grid.ColumnSpan="4" Grid.Column="1" Header="Notifications:" Height="82" Margin="10.667,235,12.333,0" Grid.Row="1" VerticalAlignment="Top" BorderBrush="#FFFF1700">
             <TextBox x:Name="Notification" Height="57" Margin="0,0,3,0" TextWrapping="Wrap" VerticalAlignment="Top" RenderTransformOrigin="0.5,0.5" FontSize="10"/>
         </GroupBox>
+        <TextBlock Text="Timestamp Server:" HorizontalAlignment="Left" Margin="11.667,322,0,0" Grid.ColumnSpan="4" Grid.Column="1" Grid.Row="1" VerticalAlignment="Top" Height="16" FontSize="10"/>
+        <TextBox x:Name="TimestampServer" Text="http://timestamp.digicert.com" IsReadOnly="True" Grid.ColumnSpan="4" Grid.Column="1" Margin="11.667,340,40.333,0" Grid.Row="1" VerticalAlignment="Top" Height="22" FontSize="10" Background="#FFF0F0F0"/>
+        <Button x:Name="TimestampConfig" Content="&#x2699;" Grid.ColumnSpan="4" Grid.Column="1" Margin="0,340,12.333,0" Grid.Row="1" VerticalAlignment="Top" Height="22" Width="24" FontSize="12" HorizontalAlignment="Right" ToolTip="Configure timestamp server"/>
 
     </Grid>
 </Window>
@@ -173,7 +176,7 @@ function Invoke-SignFile ([Parameter(Mandatory = $true)]$filename) {
     $mycert = Get-ChildItem("Cert:\CurrentUser\my\$thumbprint")
     Set-AuthenticodeSignature -FilePath $filename `
       -Certificate $mycert `
-      -TimestampServer http://timestamp.digicert.com `
+      -TimestampServer $window.TimestampServer.Text `
       -IncludeChain All `
       -HashAlgorithm SHA256
     Write-Verbose -Message ("File {0} signed" -f $filename)
@@ -191,7 +194,55 @@ $script:mycodesigningcerts = @()
 $window.Close.add_Click{
   # remove param() block if access to event information is not required
   
-  Exit
+  exit
+}
+
+$window.TimestampConfig.add_Click{
+  $dialog = New-Object Windows.Window
+  $dialog.Title = 'Configure Timestamp Server'
+  $dialog.Width = 500
+  $dialog.Height = 150
+  $dialog.WindowStartupLocation = 'CenterOwner'
+  $dialog.Owner = $window
+  $dialog.ResizeMode = 'NoResize'
+
+  $stackPanel = New-Object Windows.Controls.StackPanel
+  $stackPanel.Margin = '10'
+
+  $label = New-Object Windows.Controls.TextBlock
+  $label.Text = 'Timestamp Server URL:'
+  $label.Margin = '0,0,0,5'
+  [void]$stackPanel.Children.Add($label)
+
+  $urlTextBox = New-Object Windows.Controls.TextBox
+  $urlTextBox.Text = $window.TimestampServer.Text
+  $urlTextBox.Margin = '0,0,0,10'
+  [void]$stackPanel.Children.Add($urlTextBox)
+
+  $buttonPanel = New-Object Windows.Controls.StackPanel
+  $buttonPanel.Orientation = 'Horizontal'
+  $buttonPanel.HorizontalAlignment = 'Right'
+
+  $okButton = New-Object Windows.Controls.Button
+  $okButton.Content = 'OK'
+  $okButton.Width = 75
+  $okButton.Margin = '0,0,10,0'
+  $okButton.IsDefault = $true
+  $okButton.add_Click{
+    $window.TimestampServer.Text = $urlTextBox.Text
+    $dialog.Close()
+  }
+  [void]$buttonPanel.Children.Add($okButton)
+
+  $cancelButton = New-Object Windows.Controls.Button
+  $cancelButton.Content = 'Cancel'
+  $cancelButton.Width = 75
+  $cancelButton.IsCancel = $true
+  [void]$buttonPanel.Children.Add($cancelButton)
+
+  [void]$stackPanel.Children.Add($buttonPanel)
+  $dialog.Content = $stackPanel
+  [void]$dialog.ShowDialog()
 }
 
 $window.Browse.add_Click{
@@ -211,7 +262,7 @@ $window.Browse.add_Click{
 
   $path = $FileBrowser.FileNames
 
-  If ($FileBrowser.FileNames -like "*\*") {
+  if ($FileBrowser.FileNames -like "*\*") {
 
     # Do something before work on individual files commences
     foreach ($file in Get-ChildItem $path) {
@@ -274,7 +325,7 @@ $window.Sign.add_Click{
   $files = Get-Files
   #$signcert = @($window.ComboBox1.SelectedItem)
   #Write-Host $global:mycodesigningcerts[(($window.ComboBox1.SelectedIndex))]
-  Foreach ($file in $files) {
+  foreach ($file in $files) {
     #Set-AuthenticodeSignature -Certificate $global:mycodesigningcerts[($window.ComboBox1.SelectedIndex)] -FilePath $file
     try {
       Invoke-SignFile $file

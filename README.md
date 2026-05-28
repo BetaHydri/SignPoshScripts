@@ -21,7 +21,41 @@ certificates from the Windows certificate store **or** a smart card.
   - Smart card readers (Microsoft Smart Card Key Storage Provider)
 - Deduplicates certificates and filters out expired ones
 - Signs with SHA-256 and timestamps via DigiCert
+- Configurable timestamp server (default: DigiCert, changeable via ⚙ button)
 - Includes the full certificate chain in the signature
+
+## Timestamp Server
+
+Every Authenticode signature created by this tool includes a
+**RFC 3161 timestamp** from a trusted timestamp authority.
+The default server is `http://timestamp.digicert.com`.
+You can change it by clicking the **⚙** button next to the
+Timestamp Server field in the UI.
+
+### Why timestamps matter
+
+A timestamp cryptographically proves **when** the signature was
+applied. Without a timestamp, the signature becomes invalid the
+moment your code-signing certificate expires. With a timestamp,
+Windows continues to trust the signature indefinitely — even after
+the certificate has expired — because the timestamp proves the
+script was signed while the certificate was still valid.
+
+**In short:** Always use a timestamp server. It costs nothing and
+ensures your signed scripts keep working after certificate renewal.
+
+### Common timestamp servers
+
+| Provider | URL |
+|---|---|
+| DigiCert (default) | `http://timestamp.digicert.com` |
+| Sectigo | `http://timestamp.sectigo.com` |
+| GlobalSign | `http://timestamp.globalsign.com/tsa/r6advanced1` |
+| SSL.com | `http://ts.ssl.com` |
+
+> **Note:** Timestamp servers are public and free. They work with
+> any code-signing certificate — whether issued by a public CA,
+> an internal enterprise CA, or self-signed.
 
 ## Prerequisites
 
@@ -208,8 +242,11 @@ issuer, thumbprint, validity) of the selected certificate.
 ### Step 3 — Sign
 
 Select one or more files in the list, then click **Sign**. Each file is
-signed with SHA-256, timestamped via DigiCert, and the full certificate
-chain is included. The **Notifications** area confirms which files were
+signed with SHA-256, timestamped via the configured timestamp server
+(default: DigiCert), and the full certificate chain is included.
+To use a different timestamp server, click the **⚙** button next to
+the Timestamp Server field before signing.
+The **Notifications** area confirms which files were
 signed successfully or reports any errors.
 
 ### Step 4 — Close
