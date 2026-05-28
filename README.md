@@ -223,6 +223,39 @@ Get-AuthenticodeSignature -FilePath \\Server\Share\YourScript.ps1 |
 
 ---
 
+## What Happens When a Signed Script Is Modified?
+
+Authenticode signatures are a cryptographic hash over the entire file
+content. If **any** change is made to the script after signing — even
+a single character — the signature becomes invalid.
+
+### Behavior by Execution Policy
+
+| Execution Policy | Modified signed script behavior |
+|---|---|
+| `AllSigned` | **Blocked** — error: "file has been changed since it was signed" |
+| `RemoteSigned` | Local files still run (no signature required). Remote files (downloaded / UNC) are blocked |
+| `Unrestricted` | Runs, but may prompt a warning for remote files |
+
+### Checking Signature Status
+
+```powershell
+Get-AuthenticodeSignature .\YourScript.ps1 | Select-Object Status, StatusMessage
+```
+
+| Status | Meaning |
+|---|---|
+| `Valid` | File has not been modified since signing |
+| `HashMismatch` | File was modified after signing — must re-sign |
+| `NotSigned` | No signature block present |
+| `UnknownError` | Signing certificate is not trusted on this machine |
+
+> **Important:** After any code change, the script must be re-signed.
+> The old signature block remains in the file but is cryptographically
+> invalid once the content changes.
+
+---
+
 ## How to Use
 
 ### Step 1 — Browse for files
