@@ -1,0 +1,71 @@
+# Auto-translates README.md -> README.de.md via OpenAI on every push that
+# changes README.md. Commits the result back to the branch.
+#
+# Setup (one-time):
+#   1. Get an OpenAI API key: https://platform.openai.com/api-keys
+#   2. Add it as a repo secret:
+#        Settings -> Secrets and variables -> Actions -> New repository secret
+#        Name:  OPENAI_API_KEY
+#        Value: <your sk-... key>
+#   3. (Optional) Override the model via repo variable OPENAI_MODEL
+#      (default: gpt-4o-mini). Use gpt-4o or gpt-4.1 for highest quality.
+#
+# Notes:
+#   - Skips its own auto-commits (commit message prefix below) to avoid loops.
+#   - Overwrites README.de.md. Manual edits to README.de.md will be lost on
+#     the next push that modifies README.md.
+
+name: Translate README (OpenAI)
+
+on:
+  push:
+    branches:
+      - SIGNPOWERSHELL
+    paths:
+      - 'README.md'
+      - '.github/scripts/Translate-Readme.ps1'
+      - '.github/workflows/translate-readme.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: translate-readme-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    # Skip when the previous commit was the auto-translation itself.
+    if: "!startsWith(github.event.head_commit.message, 'docs(i18n): sync README.de.md')"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect README.md change
+        id: changed
+        uses: tj-actions/changed-files@v45
+        with:
+          files: README.md
+
+      - name: Translate README -> README.de.md
+        if: steps.changed.outputs.any_changed == 'true' || github.event_name == 'workflow_dispatch'
+        shell: pwsh
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
+        run: |
+          if (-not $env:OPENAI_API_KEY) {
+            Write-Error "OPENAI_API_KEY secret is not set. See workflow file header for setup."
+            exit 1
+          }
+          $model = if ($env:OPENAI_MODEL) { $env:OPENAI_MODEL } else { 'gpt-4o-mini' }
+          ./.github/scripts/Translate-Readme.ps1 -ApiKey $env:OPENAI_API_KEY -Model $model
+
+      - name: Commit & push
+        if: steps.changed.outputs.any_changed == 'true' || github.event_name == 'workflow_dispatch'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'docs(i18n): sync README.de.md from README.md'
+          file_pattern: README.de.md
