@@ -1,5 +1,7 @@
 # SignPoshScripts
 
+**Language / Sprache:** **English** | [Deutsch](README.de.md)
+
 [![PowerShell](https://img.shields.io/badge/Language-PowerShell-blue?logo=powershell&logoColor=white)](https://github.com/BetaHydri/SignPoshScripts)
 [![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows&logoColor=white)](https://github.com/BetaHydri/SignPoshScripts)
 [![GitHub stars](https://img.shields.io/github/stars/BetaHydri/SignPoshScripts?style=flat&logo=github)](https://github.com/BetaHydri/SignPoshScripts/stargazers)
