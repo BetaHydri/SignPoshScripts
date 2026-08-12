@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-08-12
+
+### Fixed
+
+- Smart card detection now works with modern CNG keys. The previous check relied on
+  `PrivateKey.CspKeyContainerInfo`, which is `$null` for CNG Key Storage Providers, so
+  CNG-based smart cards (e.g. "Microsoft Smart Card Key Storage Provider") were never matched.
+
+### Changed
+
+- Smart card certificate discovery probes both legacy CSP and CNG (RSA and ECDSA) private keys
+  and matches any provider whose name contains "Smart Card".
+- Code Signing enhanced key usage is now matched by OID (`1.3.6.1.5.5.7.3.3`) in addition to the
+  localized friendly name.
+
 ## [2.0.0] - 2026-05-28
 
 ### Added
@@ -52,7 +67,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Initial release with basic PowerShell script signing functionality
 
-[Unreleased]: https://github.com/BetaHydri/SignPoshScripts/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/BetaHydri/SignPoshScripts/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/BetaHydri/SignPoshScripts/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/BetaHydri/SignPoshScripts/compare/v1.1.0...v2.0.0
 [1.1.0]: https://github.com/BetaHydri/SignPoshScripts/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/BetaHydri/SignPoshScripts/compare/v0.1.0...v1.0.0

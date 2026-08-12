@@ -137,25 +137,64 @@ function Get-Files {
   }
 }
 
+function Get-CertificateKeyProviderName {
+  # Legacy CSP exposes the provider via CspKeyContainerInfo; CNG keys do not, so probe both.
+  param
+  (
+    [Parameter(Mandatory = $true)]
+    [System.Security.Cryptography.X509Certificates.X509Certificate2]
+    $Certificate
+  )
+
+  if (-not $Certificate.HasPrivateKey) { return $null }
+
+  # CNG Key Storage Providers (e.g. "Microsoft Smart Card Key Storage Provider")
+  try {
+    $rsaCng = [System.Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPrivateKey($Certificate)
+    if ($rsaCng -is [System.Security.Cryptography.RSACng]) {
+      return $rsaCng.Key.Provider.Provider
+    }
+  }
+  catch { }
+
+  try {
+    $ecdsaCng = [System.Security.Cryptography.X509Certificates.ECDsaCertificateExtensions]::GetECDsaPrivateKey($Certificate)
+    if ($ecdsaCng -is [System.Security.Cryptography.ECDsaCng]) {
+      return $ecdsaCng.Key.Provider.Provider
+    }
+  }
+  catch { }
+
+  # Legacy CSP providers (e.g. "Microsoft Base Smart Card Crypto Provider")
+  try {
+    if ($Certificate.PrivateKey -and $Certificate.PrivateKey.CspKeyContainerInfo) {
+      return $Certificate.PrivateKey.CspKeyContainerInfo.ProviderName
+    }
+  }
+  catch { }
+
+  return $null
+}
+
 function Get-CodeSigningCertificatesFromSmartCard {
   try {
     # Load the smartcard reader
     $store = New-Object System.Security.Cryptography.X509Certificates.X509Store "My", "CurrentUser"
     $store.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadOnly)
 
-    # Get all certificates from the smartcard
-    $certificates = $store.Certificates | Where-Object { 
-      $_.HasPrivateKey -and 
-      $_.PrivateKey.CspKeyContainerInfo.ProviderName -eq "Microsoft Smart Card Key Storage Provider" 
-    }
+    foreach ($cert in $store.Certificates) {
+      if (-not $cert.HasPrivateKey) { continue }
 
-    foreach ($cert in $certificates) {
+      # Keep only certs whose private key lives on a smart card (CSP or CNG provider)
+      $providerName = Get-CertificateKeyProviderName -Certificate $cert
+      if (-not $providerName -or $providerName -notlike '*Smart Card*') { continue }
+
       # Check if the certificate has the code signing usage
       foreach ($extension in $cert.Extensions) {
         if ($extension -is [System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension]) {
           $usages = $extension.EnhancedKeyUsages
           foreach ($usage in $usages) {
-            if ($usage.FriendlyName -eq "Code Signing") {
+            if ($usage.FriendlyName -eq "Code Signing" -or $usage.Value -eq "1.3.6.1.5.5.7.3.3") {
               Write-Output $cert
             }
           }
