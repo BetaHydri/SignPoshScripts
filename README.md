@@ -68,6 +68,58 @@ smart card.
 The certificate's Enhanced Key Usage (EKU) must include:
 $\color{red}{\text{Code Signing (1.3.6.1.5.5.7.3.3)}}$
 
+## Creating a Self-Signed Certificate (Testing Only)
+
+> **⚠️ For testing only.** A self-signed code-signing certificate is
+> **not** trusted by other machines and must never be used for
+> production code signing. Use a certificate issued by a public CA or
+> your internal enterprise CA for anything you distribute.
+
+Create a self-signed code-signing certificate and store it in your
+**user** certificate store (`Cert:\CurrentUser\My`) — this is exactly
+where the tool discovers software-based certificates:
+
+```powershell
+$cert = New-SelfSignedCertificate `
+  -Subject "CN=PowerShell Code Signing (Test)" `
+  -Type CodeSigningCert `
+  -KeyUsage DigitalSignature `
+  -KeyAlgorithm RSA `
+  -KeyLength 2048 `
+  -HashAlgorithm SHA256 `
+  -CertStoreLocation Cert:\CurrentUser\My `
+  -NotAfter (Get-Date).AddYears(1)
+
+$cert | Format-List Subject, Thumbprint, NotAfter
+```
+
+The certificate now appears in the tool's dropdown after clicking
+**Browse...**.
+
+### Make PowerShell trust the test certificate
+
+Because a self-signed certificate chains to itself, copy it into the
+**Trusted Root Certification Authorities** and **Trusted Publisher**
+stores so signed scripts run under `AllSigned` / `RemoteSigned`:
+
+```powershell
+$store = Get-Item "Cert:\CurrentUser\My\$($cert.Thumbprint)"
+foreach ($storeName in 'Root', 'TrustedPublisher') {
+    $s = New-Object System.Security.Cryptography.X509Certificates.X509Store $storeName, 'CurrentUser'
+    $s.Open('ReadWrite')
+    $s.Add($store)
+    $s.Close()
+}
+```
+
+### Remove the test certificate when done
+
+```powershell
+Get-ChildItem Cert:\CurrentUser\My, Cert:\CurrentUser\Root, Cert:\CurrentUser\TrustedPublisher |
+    Where-Object Subject -eq 'CN=PowerShell Code Signing (Test)' |
+    Remove-Item
+```
+
 ## Files
 
 | File / Folder | Description |
